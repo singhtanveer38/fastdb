@@ -2,9 +2,10 @@ import psycopg2
 import pandas as pd
 import os
 import json
+import io
 
 #path = sys.argv[1]
-path = "/home/tanveer/projects/paintings/data/"
+path = "/home/tanveer/downloads/MusicalCollaborations/"
 files = os.listdir(path)
 database = "yoyo"
 
@@ -30,9 +31,27 @@ for table in tables:
     columns = df.columns
     dataTypes = df.dtypes
 
-    break
 
-for i,j in zip(columns, dataTypes):
-    print(i, j)
+    tableTypes = []
+    for i,j in zip(columns, dataTypes):
+        tableTypes.append(f"{i} {j}")
+
+    print(tableTypes)
+
+    tableTypes = ", ".join(tableTypes)
+
+    tableTypes = tableTypes.replace("int64", "int")
+    tableTypes = tableTypes.replace("object", "varchar")
+    tableTypes = tableTypes.replace("float64", "float")
+
+    print(tableTypes)
+
+    curr.execute(f"create table {table.split('.')[0]} ({tableTypes});")
+
+    with io.open(path+table, "r", encoding='utf-8') as f:
+        next(f)
+        curr.copy_from(f, table.split('.')[0], sep=',')
 
 
+conn.commit()
+conn.close()
